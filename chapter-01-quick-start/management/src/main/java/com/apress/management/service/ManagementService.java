@@ -10,9 +10,11 @@ import com.apress.management.repository.CommunicationRepository;
 import com.apress.management.repository.CompanyRepository;
 import com.apress.management.repository.CustomerRepository;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 @Service
@@ -91,5 +93,21 @@ public class ManagementService {
                         .spliterator(), false).toList();
 
         return new CustomerDetailsDTO(customer, company, addresses, communications);
+    }
+
+    /* Flux: 0 ila N (birden fazla, liste veya akış şeklinde) veri dönecekse kullanılır (Örn: findAll() ile tüm
+    customer'ları listelerken).*/
+    public Flux<CustomerDetailsDTO> getCustomersWithDetails() {
+        return Flux.fromIterable(this.customerRepository.findAll())
+                .map(customer -> {
+                    var company = this.companyRepository.findById(customer.companyId());
+                    List<Address> addresses = StreamSupport.stream(this.addressRepository
+                                    .findAllByCustomerId(customer.customerId()).spliterator(), false)
+                            .collect(Collectors.toList());
+                    List<Communication> communications = StreamSupport.stream(this.communicationRepository
+                            .findAllByCustomerId(customer.customerId()).spliterator(), false)
+                            .collect(Collectors.toList());
+                    return new CustomerDetailsDTO(customer, company, addresses, communications);
+                });
     }
 }

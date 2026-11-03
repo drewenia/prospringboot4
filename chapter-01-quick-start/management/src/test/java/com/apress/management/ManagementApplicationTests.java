@@ -7,8 +7,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webtestclient.autoconfigure.AutoConfigureWebTestClient;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
@@ -50,10 +53,35 @@ class ManagementApplicationTests {
     }
 
     @Test
-    void shouldReturnNotFoundForInvalidId(){
+    void shouldReturnNotFoundForInvalidId() {
         webTestClient.get()
                 .uri("/api/v1/customers/" + UUID.randomUUID())
                 .exchange()
                 .expectStatus().isNotFound();
+    }
+
+    @Test
+    void shouldRetrieveCustomerWithDetails() {
+        webTestClient.get()
+                .uri("/api/v1/customers")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody(CustomerDetailsDTO[].class)
+                .value(dto -> {
+                    assert dto != null;
+                    assertThat(dto).hasSize(3);
+
+                    CustomerDetailsDTO felipe = Arrays.stream(dto)
+                            .filter(p -> "Felipe".equals(p.customer().firstName()))
+                            .findFirst()
+                            .orElseThrow(() -> new AssertionError("Felipe not found"));
+                    assertThat(felipe.customer().firstName()).isEqualTo("Felipe");
+                    assertThat(felipe.customer().lastName()).isEqualTo("Gomez");
+                    assertThat(felipe.customer().email()).isEqualTo("felipe.gomez@apress.com");
+                    assertThat(felipe.company().companyName()).isEqualTo("Apress");
+                    assertThat(felipe.addresses()).isNotEmpty();
+                    assertThat(felipe.communications()).isNotEmpty();
+                });
     }
 }

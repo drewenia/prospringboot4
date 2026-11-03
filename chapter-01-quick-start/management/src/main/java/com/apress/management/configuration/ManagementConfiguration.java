@@ -136,6 +136,7 @@ public class ManagementConfiguration {
 
     @Bean
     RouterFunction<ServerResponse> managementRoutes(ManagementHandlers handlers) {
-        return route(RequestPredicates.GET("/api/v1/customers/{id}"),handlers::getCustomerDetails);
+        return route(RequestPredicates.GET("/api/v1/customers/{id}"),handlers::getCustomerDetails)
+                .andRoute(RequestPredicates.GET("/api/v1/customers"),handlers::getCustomers);
     }
 }
